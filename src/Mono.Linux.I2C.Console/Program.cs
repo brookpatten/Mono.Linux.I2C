@@ -45,19 +45,21 @@ namespace Mono.Linux.I2C.Console
 				}
 			}
 
-			var i2cBus = new I2CBus(bus);
-			var i2cDevice = new I2CDevice(i2cBus, device);
-
 			byte[] bytes;
-			if (endRegister.HasValue)
+			using (var i2cBus = new I2CBus(bus))
 			{
-				bytes = new byte[endRegister.Value - startRegister];
-				var read = i2cDevice.ReadBytes(startRegister, (byte)(endRegister.Value - startRegister), bytes);
-			}
-			else
-			{
-				bytes = new byte[1];
-				bytes[0] = i2cDevice.ReadByte(startRegister);
+				var i2cDevice = new I2CDevice(i2cBus, device);
+
+				if (endRegister.HasValue)
+				{
+					bytes = new byte[endRegister.Value - startRegister];
+					var read = i2cDevice.ReadBytes(startRegister, (byte)(endRegister.Value - startRegister), bytes);
+				}
+				else
+				{
+					bytes = new byte[1];
+					bytes[0] = i2cDevice.ReadByte(startRegister);
+				}
 			}
 
 			for (int b = startRegister; b == startRegister || (endRegister.HasValue && b <= endRegister.Value);b++)
