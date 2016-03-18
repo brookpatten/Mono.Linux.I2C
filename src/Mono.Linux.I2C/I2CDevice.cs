@@ -109,7 +109,6 @@ namespace Mono.Linux.I2C
             // xxx args: bitStart=12, length=3
             // 010 masked
             // -> 010 shifted
-            uint8_t count;
             uint16_t w = ReadWord(regAddr, timeout);
             uint16_t mask = (ushort)(((1 << length) - 1) << (bitStart - length + 1));
             w &= mask;

@@ -3,28 +3,20 @@ using System.IO;
 using System.Runtime.InteropServices;
 
 using Mono.Unix.Native;
+using Mono.Unix;
 
 namespace Mono.Linux.I2C
 {
     public unsafe class I2CBus:IDisposable
     {
         public const string DefaultDeviceFileFormat = "/dev/i2c-{0}";
-        public const int O_RDWR = 2;
         public const int I2C_SLAVE = 0x0703;
 
         private string _device;
         private int _fd = -1;
 
-        //TODO: change to mono.unix.natives
-        [DllImport("libc.so.6")]
-        extern private static int open(string file, int mode);
-        
-        //TODO: change to mono.unix.natives
-        [DllImport("libc.so.6")]
-        extern private static int close(int fd);
-
         //TODO: change to safehandles
-        [DllImport("libc.so.6")]
+		[DllImport("libc.so.6",SetLastError=true)]
         extern private static int ioctl(int fd, int request, byte x);
 
         public I2CBus(int index,string deviceFileFormat=null)
@@ -46,16 +38,20 @@ namespace Mono.Linux.I2C
 
         protected void Open()
         {
-            _fd = open(_device, O_RDWR);
-            if (_fd < 0)
-                throw new UnixIOException(_device);
+			_fd = Syscall.open(_device, OpenFlags.O_RDWR);
+			if (_fd < 0)
+			{
+				CheckAndThrowUnixIOException();
+			}
         }
 
         protected void ChangeDevice(byte devAddr)
         {
             int ret = ioctl(_fd, I2C_SLAVE, devAddr);
-            if (ret < 0)
-                throw new UnixIOException(_device + ": ioctl");
+			if (ret < 0)
+			{
+				CheckAndThrowUnixIOException();
+			}
         }
 
         public byte ReadBytes(byte devAddr, byte regAddr, byte length, byte[] data, int offset=0, ushort timeout = 0)
@@ -67,19 +63,25 @@ namespace Mono.Linux.I2C
 
             //fixed(byte* p = &regAddr)
             {
-                int ret = (int)write(_fd, &regAddr, 1);
-                if (ret != 1)
-                    throw new IOException(_device + ": write");
+                int ret = (int)Syscall.write(_fd, &regAddr, 1);
+				if (ret != 1)
+				{
+					CheckAndThrowUnixIOException();
+				}
             }
 
             int count;
             fixed (byte* p = &data[offset])
             {
-                count = (int)read(_fd, p, (ulong)length);
-                if (count < 0)
-                    throw new IOException(_device + ": read");
-                else if (count != length)
-                    throw new IOException(_device + ": read short: length = " + length +" > " + count);
+                count = (int)Syscall.read(_fd, p, (ulong)length);
+				if (count < 0)
+				{
+					CheckAndThrowUnixIOException();
+				}
+				else if (count != length)
+				{
+					throw new IOException(_device + ": read short: length = " + length + " > " + count);
+				}
             }
 
             return (byte)count;
@@ -94,8 +96,10 @@ namespace Mono.Linux.I2C
         */
         public void WriteBytes(byte devAddr, byte regAddr, byte length, byte[] data)
         {
-            if (length > 127)
-                throw new IOException(_device + ": length > 127");
+			if (length > 127)
+			{
+				throw new IOException(_device + ": length > 127");
+			}
 
             ChangeDevice(devAddr);
 
@@ -106,12 +110,12 @@ namespace Mono.Linux.I2C
             int count;
             fixed (byte* p = buffer)
             {
-                count = (int)write(_fd, p, (ulong)(length + 1));
+                count = (int)Syscall.write(_fd, p, (ulong)(length + 1));
             }
 
             if (count < 0)
             {
-                throw new IOException(_device + ": write = " + count);
+				CheckAndThrowUnixIOException();
             }
             else if (count != length + 1)
             {
@@ -143,11 +147,11 @@ namespace Mono.Linux.I2C
             }
             fixed (byte* p = buf)
             {
-                count = (int)write(_fd, p, (ulong)(length * 2 + 1));
+                count = (int)Syscall.write(_fd, p, (ulong)(length * 2 + 1));
             }
             if (count < 0)
             {
-                throw new IOException(_device + ": write");
+				CheckAndThrowUnixIOException();
             }
             else if (count != length * 2 + 1)
             {
@@ -157,18 +161,26 @@ namespace Mono.Linux.I2C
 
         public void Close()
         {
-            if(_fd>0)
-            {
-              int ret = close(_fd);
-              if (ret != 0)
-                  throw new UnixIOException(_device);
-              _fd=-1;
-            }
+	        if(_fd>0)
+	        {
+				int ret = Syscall.close(_fd);
+				if (ret != 0)
+				{
+					CheckAndThrowUnixIOException();
+				}
+				_fd=-1;
+	        }
         }
         
         public void Dispose()
         {
           Close();
         }
+
+		private void CheckAndThrowUnixIOException()
+		{
+			var error = Marshal.GetLastWin32Error();
+			throw new UnixIOException(error);
+		}
     }
 }
