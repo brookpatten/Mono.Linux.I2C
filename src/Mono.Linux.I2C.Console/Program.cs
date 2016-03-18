@@ -16,23 +16,23 @@ namespace Mono.Linux.I2C.Console
 			byte startRegister;
 			byte? endRegister=null;
 
-			if (!(args.Length >= 1 && byte.TryParse(args[0], out bus)))
+			if (!(args.Length >= 1 && TryParseByte(args[0], out bus)))
 			{
 				System.Console.WriteLine("Missing bus argument");
 				return;
 			}
-			if (!(args.Length >= 2 && byte.TryParse(args[1], out device)))
+			if (!(args.Length >= 2 && TryParseByte(args[1], out device)))
 			{
 				System.Console.WriteLine("Missing device argument");
 				return;
 			}
-			if (!(args.Length >= 3 && byte.TryParse(args[2], out startRegister)))
+			if (!(args.Length >= 3 && TryParseByte(args[2], out startRegister)))
 			{
 				System.Console.WriteLine("Missing register argument");
 				return;
 			}
 			byte end;
-			if (args.Length >= 4 && byte.TryParse(args[3], out end))
+			if (args.Length >= 4 && TryParseByte(args[3], out end))
 			{
 				if (end > startRegister)
 				{
@@ -66,6 +66,44 @@ namespace Mono.Linux.I2C.Console
 			}
 		}
 
+		public static byte[] HexToByteArray(string hex) 
+		{
+			if (hex.StartsWith("0x"))
+			{
+				hex = hex.Substring(2);
+			}
+			hex = hex.ToLower();
+			return Enumerable.Range(0, hex.Length)
+				     .Where(x => x % 2 == 0)
+				     .Select(x => Convert.ToByte(hex.Substring(x, 2), 16))
+				     .ToArray();
+		}
 
+		public static byte HexToByte(string hex)
+		{
+			var bytes = HexToByteArray(hex);
+			if (bytes.Length == 1)
+			{
+				return bytes.Single();
+			}
+			else
+			{
+				throw new FormatException("input string was more than one byte");
+			}
+		}
+
+		public static bool TryParseByte(string hex, out byte b)
+		{
+			try
+			{
+				b = HexToByte(hex);
+				return true;
+			}
+			catch
+			{
+				b = 0;
+				return false;
+			}
+		}
 	}
 }
