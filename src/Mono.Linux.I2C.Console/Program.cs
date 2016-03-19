@@ -65,7 +65,7 @@ namespace Mono.Linux.I2C.Console
 
 			for (int b = startRegister; b == startRegister || (endRegister.HasValue && b <= endRegister.Value);b++)
 			{
-				System.Console.WriteLine("0x{0:XX}:0x{1:XX}", b, bytes[b - startRegister]);
+				System.Console.WriteLine("{0:X}:{1:X}", b, bytes[b - startRegister]);
 			}
 		}
 
