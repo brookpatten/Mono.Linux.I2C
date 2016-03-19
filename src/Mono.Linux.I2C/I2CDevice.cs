@@ -293,6 +293,10 @@ namespace Mono.Linux.I2C
         {
             _bus.WriteBytes(_deviceAddress, regAddr, 1, new byte[]{(byte)data});
         }
+		public void WriteBytes(byte regAddr, byte length, byte[] data)
+		{
+			_bus.WriteBytes (_deviceAddress, regAddr, length, data);
+		}
         /** Write single word to a 16-bit device register.
         * @param regAddr Register address to write to
         * @param data New word value to write
