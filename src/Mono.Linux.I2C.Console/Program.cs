@@ -9,7 +9,8 @@ namespace Mono.Linux.I2C.Console
 	{
 		public static void Main(string[] args)
 		{
-			System.Console.WriteLine("Usage: i2c bus device register [end register]");
+			System.Console.WriteLine("Usage: i2c bus device register [end-register]");
+			System.Console.WriteLine("Example: i2c 0x01 0x2c 0x90 0x97");
 
 			byte bus;
 			byte device;
@@ -52,8 +53,8 @@ namespace Mono.Linux.I2C.Console
 
 				if (endRegister.HasValue)
 				{
-					bytes = new byte[endRegister.Value - startRegister];
-					var read = i2cDevice.ReadBytes(startRegister, (byte)(endRegister.Value - startRegister), bytes);
+					bytes = new byte[endRegister.Value - startRegister + 1];
+					var read = i2cDevice.ReadBytes(startRegister, (byte)(endRegister.Value - startRegister + 1), bytes);
 				}
 				else
 				{
@@ -64,7 +65,7 @@ namespace Mono.Linux.I2C.Console
 
 			for (int b = startRegister; b == startRegister || (endRegister.HasValue && b <= endRegister.Value);b++)
 			{
-				System.Console.WriteLine("{0:X}:{1:X}", b, bytes[b - startRegister]);
+				System.Console.WriteLine("0x{0:XX}:0x{1:XX}", b, bytes[b - startRegister]);
 			}
 		}
 
