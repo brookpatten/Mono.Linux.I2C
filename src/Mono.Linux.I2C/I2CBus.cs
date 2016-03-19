@@ -19,17 +19,36 @@ namespace Mono.Linux.I2C
 		[DllImport("libc.so.6",SetLastError=true)]
         extern private static int ioctl(int fd, int request, byte x);
 
-        public I2CBus(int index,string deviceFileFormat=null)
+		public I2CBus(int index)
+		{
+			_device = string.Format(DefaultDeviceFileFormat, index);
+		}
+
+        public I2CBus(int index,string deviceFileFormat)
         {
-            _device = string.Format(string.IsNullOrEmpty(deviceFileFormat) ? DefaultDeviceFileFormat : deviceFileFormat, index);
-            Open();
+            _device = string.Format(deviceFileFormat, index);
         }
         
         public I2CBus(string deviceFile)
         {
             _device = deviceFile;
-            Open();
         }
+
+		public bool IsOpen 
+		{
+			get 
+			{
+				return _fd != -1;
+			}
+		}
+
+		private void OpenIfNotOpen ()
+		{
+			if (!IsOpen) 
+			{
+				Open ();
+			}
+		}
 
         public override string ToString()
         {
@@ -47,6 +66,8 @@ namespace Mono.Linux.I2C
 
         protected void ChangeDevice(byte devAddr)
         {
+			OpenIfNotOpen ();
+
             int ret = ioctl(_fd, I2C_SLAVE, devAddr);
 			if (ret < 0)
 			{
@@ -161,7 +182,7 @@ namespace Mono.Linux.I2C
 
         public void Close()
         {
-	        if(_fd>0)
+			if(IsOpen)
 	        {
 				int ret = Syscall.close(_fd);
 				if (ret != 0)
