@@ -1,6 +1,8 @@
 # Mono.Linux.I2C
 A lightweight Mono/.Net/C# Wrapper for interacting with i2c devices on linux.
 
+[![Build Status](https://travis-ci.org/brookpatten/Mono.Linux.I2C.svg?branch=master)](https://travis-ci.org/brookpatten/Mono.Linux.I2C)
+
 **be sure that your user/process has access to the relevant device file(s) either through `sudo` or permissions**  
 *hint, if you're running through monodevelop, it probably doesn't*
 
