@@ -1,2 +1,4 @@
-language: csharp
-solution: src/Mono.Linux.I2C.sln
+install: 
+ - ./install-mono-alpha.sh
+script:
+ - xbuild /p:Configuration=Debug src/Mono.Linux.I2C.sln
