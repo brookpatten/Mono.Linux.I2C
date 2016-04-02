@@ -1,2 +1,5 @@
-language: csharp
-solution: src/Mono.Linux.I2C.sln
+install: 
+- sudo apt-get update
+- sudo apt-get install mono-devel
+script:
+- xbuild /p:Configuration=Debug src/Mono.Linux.I2C.sln
