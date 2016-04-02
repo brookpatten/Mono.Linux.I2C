@@ -1,13 +1,14 @@
 ﻿using System;
 using System.IO;
 using System.Runtime.InteropServices;
+using System.Threading.Tasks;
 
 using Mono.Unix.Native;
 using Mono.Unix;
 
 namespace Mono.Linux.I2C
 {
-    public unsafe class I2CBus:IDisposable
+    public class I2CBus:IDisposable
     {
         public const string DefaultDeviceFileFormat = "/dev/i2c-{0}";
         public const int I2C_SLAVE = 0x0703;
@@ -54,11 +55,19 @@ namespace Mono.Linux.I2C
 			}
         }
 
-        public byte ReadBytes(byte devAddr, byte regAddr, byte length, byte[] data, int offset=0, ushort timeout = 0)
+		public async Task<byte> ReadBytesAsync(byte devAddr, byte regAddr, byte length, byte[] data, int offset=0, ushort timeout = 0)
+		{
+			var task = Task<byte>.Factory.StartNew(() => ReadBytes(devAddr, regAddr, length, data, offset, timeout));
+			await task;
+			return task.Result;
+		}
+
+        public unsafe byte ReadBytes(byte devAddr, byte regAddr, byte length, byte[] data, int offset=0, ushort timeout = 0)
         {
             if (length > 127)
                 throw new IOException(_device + ": length > 127");
-
+			System.Threading.Thread.Sleep(1000);
+			System.Console.WriteLine("Reading");
             ChangeDevice(devAddr);
 
             //fixed(byte* p = &regAddr)
@@ -87,6 +96,12 @@ namespace Mono.Linux.I2C
             return (byte)count;
         }
 
+		public async Task WriteBytesAsync(byte devAddr, byte regAddr, byte length, byte[] data)
+		{
+			var task = Task.Factory.StartNew(() => WriteBytes(devAddr, regAddr, length, data));
+			await task;
+		}
+
         /** Write multiple bytes to an 8-bit device register.
         * @param devAddr I2C slave device address
         * @param regAddr First register address to write to
@@ -94,7 +109,7 @@ namespace Mono.Linux.I2C
         * @param data Buffer to copy new data from
         * @return Status of operation (true = success)
         */
-        public void WriteBytes(byte devAddr, byte regAddr, byte length, byte[] data)
+        public unsafe void WriteBytes(byte devAddr, byte regAddr, byte length, byte[] data)
         {
 			if (length > 127)
 			{
@@ -123,7 +138,13 @@ namespace Mono.Linux.I2C
             }
         }
 
-        public void WriteWords(byte devAddr, byte regAddr, byte length, ushort[] data)
+		public async Task WriteWordsAsync(byte devAddr, byte regAddr, byte length, ushort[] data)
+		{
+			var task = Task.Factory.StartNew(() => WriteWords(devAddr, regAddr, length, data));
+			await task;
+		}
+
+        public unsafe void WriteWords(byte devAddr, byte regAddr, byte length, ushort[] data)
         {
             int count = 0;
             byte[] buf = new byte[128];

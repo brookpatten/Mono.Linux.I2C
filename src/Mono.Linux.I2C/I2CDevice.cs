@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Threading.Tasks;
 
 using uint8_t = System.Byte;
 using uint16_t = System.UInt16;
@@ -115,6 +116,11 @@ namespace Mono.Linux.I2C
             w >>= (bitStart - length + 1);
             return w;
         }
+
+		public async Task<byte> ReadBytesAsync(int regAddr, byte length, byte[] data,int offset=0, ushort timeout = 0)
+		{
+			return await _bus.ReadBytesAsync(_deviceAddress, (byte)regAddr, length, data,offset,timeout);
+		}
 
         public byte ReadBytes(int regAddr, byte length, byte[] data, ushort timeout = 0)
         {
