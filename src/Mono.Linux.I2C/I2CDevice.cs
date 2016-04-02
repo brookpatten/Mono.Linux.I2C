@@ -12,9 +12,9 @@ namespace Mono.Linux.I2C
     {
         private I2CBus _bus;
         private byte _deviceAddress;
-        
+
         public I2CDevice(I2CBus bus, byte deviceAddress)
-        {
+		{
           _bus=bus;
           _deviceAddress=deviceAddress;
         }
@@ -28,6 +28,14 @@ namespace Mono.Linux.I2C
         {
             return string.Format("I2C Device {0} on {1}",_deviceAddress,_bus);
         }
+
+		public async Task<byte[]> ReadAsync(byte regAddr, byte length, ushort timeout = 0)
+		{
+			byte[] buffer = new byte[length];
+			var task = _bus.ReadBytesAsync(_deviceAddress, regAddr, length, buffer, offset: 0, timeout:timeout);
+			await task;
+			return buffer;
+		}
 
         public byte[] Read(byte regAddr, byte length, ushort timeout = 0)
         {
@@ -344,6 +352,5 @@ namespace Mono.Linux.I2C
         {
             WriteWord(regAddr, (ushort)data);
         }
-
     }
 }

@@ -54,8 +54,8 @@ namespace Mono.Linux.I2C.Console
 				if (endRegister.HasValue)
 				{
 					bytes = new byte[endRegister.Value - startRegister + 1];
+					//could use the sync method here, but I want to test out the async
 					var task = i2cDevice.ReadBytesAsync(startRegister, (byte)(endRegister.Value - startRegister + 1), bytes);
-					System.Console.WriteLine("Waiting");
 					task.Wait();
 				}
 				else
