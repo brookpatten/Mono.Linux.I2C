@@ -66,9 +66,9 @@ namespace Mono.Linux.I2C
         {
             if (length > 127)
                 throw new IOException(_device + ": length > 127");
-			System.Threading.Thread.Sleep(1000);
-			System.Console.WriteLine("Reading");
-            ChangeDevice(devAddr);
+
+			//TODO: break this up so that we can await on all 3  native calls
+			ChangeDevice(devAddr);
 
             //fixed(byte* p = &regAddr)
             {
