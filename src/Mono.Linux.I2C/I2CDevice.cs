@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Threading.Tasks;
 
 using uint8_t = System.Byte;
 using uint16_t = System.UInt16;
@@ -11,9 +12,9 @@ namespace Mono.Linux.I2C
     {
         private I2CBus _bus;
         private byte _deviceAddress;
-        
+
         public I2CDevice(I2CBus bus, byte deviceAddress)
-        {
+		{
           _bus=bus;
           _deviceAddress=deviceAddress;
         }
@@ -28,10 +29,18 @@ namespace Mono.Linux.I2C
             return string.Format("I2C Device {0} on {1}",_deviceAddress,_bus);
         }
 
+		public async Task<byte[]> ReadAsync(byte regAddr, byte length, ushort timeout = 0)
+		{
+			byte[] buffer = new byte[length];
+			var task = _bus.ReadBytesAsync(_deviceAddress, regAddr, length, buffer, offset: 0, timeout:timeout);
+			await task;
+			return buffer;
+		}
+
         public byte[] Read(byte regAddr, byte length, ushort timeout = 0)
         {
             byte[] buffer = new byte[length];
-            byte ret = ReadBytes(regAddr, length, buffer, timeout);
+            byte ret = ReadBytes(regAddr, length, buffer,timeout: timeout);
             return buffer;
         }
 
@@ -116,9 +125,14 @@ namespace Mono.Linux.I2C
             return w;
         }
 
-        public byte ReadBytes(int regAddr, byte length, byte[] data, ushort timeout = 0)
+		public async Task<byte> ReadBytesAsync(int regAddr, byte length, byte[] data,int offset=0, ushort timeout = 0)
+		{
+			return await _bus.ReadBytesAsync(_deviceAddress, (byte)regAddr, length, data,offset,timeout);
+		}
+
+        public byte ReadBytes(int regAddr, byte length, byte[] data,int offset=0, ushort timeout = 0)
         {
-            return _bus.ReadBytes(_deviceAddress, (byte)regAddr, length, data, timeout);
+            return _bus.ReadBytes(_deviceAddress, (byte)regAddr, length, data,offset, timeout);
         }
 
         /** Read single byte from an 8-bit device register.
@@ -269,11 +283,20 @@ namespace Mono.Linux.I2C
             WriteWord(regAddr, w);
         }
 
+		public async Task WriteAsync(byte regAddr, byte[] data)
+		{
+			await _bus.WriteBytesAsync(_deviceAddress,regAddr,(byte)data.Length,data);
+		}
 
-        public void Write(byte regAddr, byte[] data)
-        {
-            _bus.WriteBytes(_deviceAddress,regAddr,(byte)data.Length,data);
-        }
+		public void Write(byte regAddr, byte[] data)
+		{
+			_bus.WriteBytes(_deviceAddress,regAddr,(byte)data.Length,data);
+		}
+
+		public async Task WriteByteAsync(byte regAddr, byte data)
+		{
+			await WriteAsync((byte)regAddr, new byte[] { data });
+		}
 
         /** Write single byte to an 8-bit device register.
         * @param regAddr Register address to write to
@@ -285,18 +308,36 @@ namespace Mono.Linux.I2C
             Write(regAddr, new byte[] { data });
         }
 
+		public async Task WriteByteAsync(int regAddr, byte data)
+		{
+			await WriteByteAsync((byte)regAddr, data);
+		}
+
         public void WriteByte(int regAddr, byte data)
         {
             WriteByte((byte)regAddr, data);
         }
+
+		public async Task WriteByteAsync(byte regAddr, sbyte data)
+		{
+			await _bus.WriteBytesAsync(_deviceAddress, regAddr, 1, new byte[]{(byte)data});
+		}
+
         public void WriteByte(byte regAddr, sbyte data)
         {
             _bus.WriteBytes(_deviceAddress, regAddr, 1, new byte[]{(byte)data});
         }
+
 		public void WriteBytes(byte regAddr, byte length, byte[] data)
 		{
 			_bus.WriteBytes (_deviceAddress, regAddr, length, data);
 		}
+
+		public async Task WriteWordAsync(byte regAddr, ushort data)
+		{
+			await _bus.WriteWordsAsync(_deviceAddress, regAddr, 1, new ushort[] { data });
+		}
+
         /** Write single word to a 16-bit device register.
         * @param regAddr Register address to write to
         * @param data New word value to write
@@ -307,10 +348,14 @@ namespace Mono.Linux.I2C
             _bus.WriteWords(_deviceAddress, regAddr, 1, new ushort[] { data });
         }
 
+		public async Task WriteWordAsync(byte regAddr, short data)
+		{
+			await WriteWordAsync(regAddr, (ushort)data);
+		}
+
         public void WriteWord(byte regAddr, short data)
         {
             WriteWord(regAddr, (ushort)data);
         }
-
     }
 }
